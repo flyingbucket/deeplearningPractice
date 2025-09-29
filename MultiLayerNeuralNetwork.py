@@ -12,7 +12,7 @@ def get_args():
     return args
 
 
-class MLNN(nn.Module):
+class MLP(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, numLayers=2) -> None:
         super().__init__()
         layers = []
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     X_test = torch.randn(50, 5)  # 50个测试样本，5个特征
     Y_test = torch.randint(0, 3, (50,))  # 3个类别
 
-    model = MLNN(input_dim=5, hidden_dim=hidden_dim, output_dim=3, numLayers=numLayers)
+    model = MLP(input_dim=5, hidden_dim=hidden_dim, output_dim=3, numLayers=numLayers)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-3)
 

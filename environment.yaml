@@ -1,0 +1,14 @@
+name: deeplearning
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pandas
+  - seaborn
+  - numpy
+  - matplotlib
+  - tqdm
+  - pip:
+      - torch
+      - torchvision
+      - --index-url https://download.pytorch.org/whl/cu126

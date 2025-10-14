@@ -5,7 +5,7 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from tqdm import tqdm
 
-data = open("input.txt").read()
+data = open("find.txt").read()
 chars = list(set(data))
 
 data_size, vocab_size = len(data), len(chars)
@@ -132,10 +132,10 @@ class RNN(nn.Module):
 
 if __name__ == "__main__":
     # 超参数
-    hidden_size = 128
-    seq_len = 50  # 每次训练用多少个字符的序列
-    lr = 1e-1
-    num_epochs = 500  # 训练轮数
+    hidden_size = 256
+    seq_len = 200  # 每次训练用多少个字符的序列
+    lr = 5e-3
+    num_epochs = 20  # 训练轮数
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -150,13 +150,21 @@ if __name__ == "__main__":
 
     # 优化器
     optimizer = optim.SGD(model.parameters(), lr=lr)
-    scheduler = StepLR(optimizer, step_size=10, gamma=0.9)
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.95)
+
     # 训练循环
-    pbar = tqdm(range(num_epochs), desc="Training")
+    pbar = range(num_epochs)
     for epoch in pbar:
         total_loss = 0
         h = h.detach()  # detach 防止梯度在整个序列上无限累积
-        for i in range(0, len(data_idxs) - seq_len, seq_len):
+
+        # 内层进度条：显示当前 step 的 loss 和 lr
+        pbar_in = tqdm(
+            range(0, len(data_idxs) - seq_len, seq_len),
+            desc=f"Epoch {epoch + 1}",
+            leave=False,
+        )
+        for step, i in enumerate(pbar_in):
             inputs = data_idxs[i : i + seq_len]
             targets = data_idxs[i + 1 : i + seq_len + 1]  # 预测下一个字符
 
@@ -166,18 +174,31 @@ if __name__ == "__main__":
             optimizer.step()
 
             total_loss += loss.item()
-        avg_loss = total_loss / ((len(data_idxs) - 1) // seq_len)
-        pbar.set_postfix({"loss": f"{avg_loss:.4f}"})
-        scheduler.step()
-        if (epoch + 1) % 10 == 0:
-            print(
-                f"Epoch {epoch + 1}, loss: {total_loss:.4f}, lr: {scheduler.get_last_lr()[0]:.5f}"
-            )
-    # 推理示例
-    seed_idx = data_idxs[0]  # 用文本开头作为种子
-    sampled_idxs, _ = model.sample(seed_idx, h, length=100)
-    sampled_text = "".join(idx2char[idx] for idx in sampled_idxs)
-    print(f"Sampled text:\n{sampled_text}\n{'-' * 50}")
 
-    # 保存模型
-    torch.save(model.state_dict(), "vanilla_rnn.pth")
+            # 更新内层进度条后缀
+            pbar_in.set_postfix(
+                {
+                    "loss": f"{loss.item():.4f}",
+                    "lr": f"{scheduler.get_last_lr()[0]:.5f}",
+                },
+                refresh=True,
+            )
+            if (step + 1) % 100 == 0:
+                scheduler.step()
+        # 计算平均 loss
+        avg_loss = total_loss / ((len(data_idxs) - 1) // seq_len)
+
+        # 每隔一个 epoch 输出信息
+        if (epoch + 1) % 1 == 0:
+            tqdm.write(
+                f"Epoch {epoch + 1} completed, avg_loss: {avg_loss:.4f}, lr: {scheduler.get_last_lr()[0]:.5f}"
+            )
+        if (epoch + 1) % 5 == 0:
+            # 推理示例
+            seed_idx = data_idxs[0]  # 用文本开头作为种子
+            sampled_idxs, _ = model.sample(seed_idx, h, length=100)
+            sampled_text = "".join(idx2char[idx] for idx in sampled_idxs)
+            print(f"Sampled text:\n{sampled_text}\n{'-' * 50}")
+
+            # 保存模型
+            torch.save(model.state_dict(), "vanilla_rnn.pth")

@@ -110,7 +110,7 @@ if __name__ == "__main__":
         batch_size=N_train, img_size=img_size, jitter=40
     )
     _, X_val, y_val = generate_colortemp_dummy(
-        batch_size=N_val, img_size=img_size, jitter=40
+        batch_size=N_val, img_size=img_size, jitter=60
     )
 
     # DataLoader
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
 
     # training
-    epochs = 20
+    epochs = 5
     best_val_acc = 0.0
 
     for epoch in range(1, epochs + 1):

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
+from tqdm import tqdm
 
 data = open("input.txt").read()
 chars = list(set(data))
@@ -9,8 +11,8 @@ chars = list(set(data))
 data_size, vocab_size = len(data), len(chars)
 print("data has %d characters, %d unique." % (data_size, vocab_size))
 
-char2idx = {ch: idx for idx, ch in enumerate(data)}
-idx2char = {idx: ch for idx, ch in enumerate(data)}
+char2idx = {ch: idx for idx, ch in enumerate(chars)}
+idx2char = {idx: ch for idx, ch in enumerate(chars)}
 
 
 class RNN(nn.Module):
@@ -131,7 +133,7 @@ class RNN(nn.Module):
 if __name__ == "__main__":
     # 超参数
     hidden_size = 128
-    seq_len = 25  # 每次训练用多少个字符的序列
+    seq_len = 50  # 每次训练用多少个字符的序列
     lr = 1e-1
     num_epochs = 500  # 训练轮数
 
@@ -148,9 +150,10 @@ if __name__ == "__main__":
 
     # 优化器
     optimizer = optim.SGD(model.parameters(), lr=lr)
-
+    scheduler = StepLR(optimizer, step_size=10, gamma=0.9)
     # 训练循环
-    for epoch in range(num_epochs):
+    pbar = tqdm(range(num_epochs), desc="Training")
+    for epoch in pbar:
         total_loss = 0
         h = h.detach()  # detach 防止梯度在整个序列上无限累积
         for i in range(0, len(data_idxs) - seq_len, seq_len):
@@ -163,10 +166,13 @@ if __name__ == "__main__":
             optimizer.step()
 
             total_loss += loss.item()
-
-        if (epoch + 1) % 50 == 0:
-            print(f"Epoch {epoch + 1}, loss: {total_loss:.4f}")
-
+        avg_loss = total_loss / ((len(data_idxs) - 1) // seq_len)
+        pbar.set_postfix({"loss": f"{avg_loss:.4f}"})
+        scheduler.step()
+        if (epoch + 1) % 10 == 0:
+            print(
+                f"Epoch {epoch + 1}, loss: {total_loss:.4f}, lr: {scheduler.get_last_lr()[0]:.5f}"
+            )
     # 推理示例
     seed_idx = data_idxs[0]  # 用文本开头作为种子
     sampled_idxs, _ = model.sample(seed_idx, h, length=100)

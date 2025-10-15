@@ -17,11 +17,13 @@ idx2char = {idx: ch for idx, ch in enumerate(chars)}
 
 class RNN(nn.Module):
     def __init__(
-        self, vocab_size, hidden_size: int, seq_len: int, *args, **kwargs
+        self, vocab_size, hidden_size: int, seq_len: int, n_hidden=3, *args, **kwargs
     ) -> None:
         super().__init__()
         self.Wxh = nn.Linear(vocab_size, hidden_size)
         self.Whh = nn.Linear(hidden_size, hidden_size)
+        Whh_list = [nn.Linear(hidden_size, hidden_size)] * n_hidden
+        self.WhhSeq = nn.Sequential(*Whh_list)
         self.Why = nn.Linear(hidden_size, vocab_size)
 
     def forward(self, inputs_idxs, h, seed_idx=None, teacher_forcing=True):
@@ -57,7 +59,7 @@ class RNN(nn.Module):
 
             # RNN update: use both Wxh and Whh
             h = torch.tanh(self.Wxh(x) + self.Whh(h))  # (1, hidden_size)
-
+            h = torch.tanh(self.WhhSeq(h))
             y = self.Why(h)  # (1, vocab_size) logits
             logits.append(y.squeeze(0))  # collect shape (vocab_size,)
 

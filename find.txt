@@ -1,11 +1,3 @@
-FIND(1)                                                                 General Commands Manual                                                                 FIND(1)
-
-NAME
-       find - search for files in a directory hierarchy
-
-SYNOPSIS
-       find [-H] [-L] [-P] [-D debugopts] [-Olevel] [starting-point...] [expression]
-
 DESCRIPTION
        This manual page documents the GNU version of find.  GNU find searches the directory tree rooted at each given starting-point by evaluating the given expression
        from  left  to  right, according to the rules of precedence (see section OPERATORS), until the outcome is known (the left hand side is false for and operations,

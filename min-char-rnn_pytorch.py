@@ -357,6 +357,9 @@ def train_char_rnn(
                 txt = "".join(idx2char[i] for i in out_idxs)
             model.train()
             print(f"[sample@epoch {epoch}] {txt[:150].replace('\\n', ' ')} ...")
+        if epoch % (sample_every * 5) == 0:
+            # 保存模型
+            torch.save(model.state_dict(), "vanilla_rnn.pth")
 
 
 if __name__ == "__main__":
@@ -365,7 +368,7 @@ if __name__ == "__main__":
     seq_len = 256  # 每次训练用多少个字符的序列
     lr = 5e-3
     batch_size = 1024
-    num_epochs = 200  # 训练轮数
+    num_epochs = 10  # 训练轮数
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

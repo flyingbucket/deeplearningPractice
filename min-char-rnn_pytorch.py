@@ -1,4 +1,5 @@
 import torch
+import math
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -343,11 +344,16 @@ def train_char_rnn(
         # ppl = (
         #     torch.exp(torch.tensor(avg_loss)).item() if avg_loss < 20 else float("inf")
         # )
+        avg_token_loss = total_loss / len(train_loader)
+        ppl = math.exp(avg_token_loss)
+        print(
+            f"Epoch {epoch:04d} | avg_token_loss: {avg_token_loss:.4f} | ppl: {ppl:.2f}"
+        )
 
         if scheduler is not None:
             scheduler.step()
 
-        print(f"Epoch {epoch:02d} | total_loss: {total_loss:.4f}")
+        # print(f"Epoch {epoch:02d} | total_loss: {total_loss:.4f}")
 
         # 简单采样看看效果
         if (idx2char is not None) and (epoch % sample_every == 0):
@@ -366,9 +372,9 @@ if __name__ == "__main__":
     # 超参数
     hidden_size = 512
     seq_len = 256  # 每次训练用多少个字符的序列
-    lr = 5e-3
+    lr = 3e-3
     batch_size = 1024
-    num_epochs = 10  # 训练轮数
+    num_epochs = 1000  # 训练轮数
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -377,7 +383,7 @@ if __name__ == "__main__":
     X, Y, char2idx, idx2char = data2tensors(data, seq_len, device)
     vocab_size = len(char2idx)
     # model
-    model = RNNBuiltIn(vocab_size, hidden_size)
+    model = RNNBuiltIn(vocab_size, hidden_size, num_layers=5)
     # 优化器
     optimizer = optim.SGD(model.parameters(), lr=lr)
     scheduler = StepLR(optimizer, step_size=10, gamma=0.95)
